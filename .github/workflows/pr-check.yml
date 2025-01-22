@@ -1,14 +1,54 @@
-name: Reusable workflow example
+name: pull-request-check
+run-name: 🚀 Kicking Off ${github.workflow} on ${github.ref_name}!
+
+# Cancel the active runs of the same branch of the same workflow (run only one
+# at the same time)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   workflow_call:
     inputs:
-      config-path:
-        required: true
+      # Custom scopes for the semanticTitle job
+      scopes:
+        required: false
         type: string
-    secrets:
-      token:
-        required: true
+      # Directories to analyze with flutter analyze
+      analyze_directories:
+        required: false
+        type: string
+        default: "lib test"
+      # In multipackage projects the build directory might be different
+      working_directory:
+        required: false
+        type: string
+        default: "."
+      # Pre-run hook, useful to run custom commands before the build (e.g. melos get)
+      setup:
+        required: false
+        type: string
+        default: ""
+      # After-run hook, useful to run custom commands after the build
+      cleanUp:
+        required: false
+        type: string
+        default: ""
+      # Git clone fetch-depth
+      fetchDepth:
+        required: false
+        type: number
+        default: 50
+      # Paths excluded from coverage
+      coverage_excludes:
+        required: false
+        type: string
+        default: ""
+      # Minimum coverage required
+      min_coverage:
+        required: false
+        type: number
+        default: 0
 
 jobs:
   triage:
@@ -17,57 +57,7 @@ jobs:
       - name: Run a one-line script
         run: echo "Hello from the template file ~"
 
-# name: pull-request-check
-# run-name: 🚀 Kicking Off ${github.workflow} on ${github.ref_name}!
 
-# # Cancel the active runs of the same branch of the same workflow (run only one
-# # at the same time)
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
-
-# on:
-#   workflow_call:
-#     inputs:
-#       # Custom scopes for the semanticTitle job
-#       scopes:
-#         required: false
-#         type: string
-#       # Directories to analyze with flutter analyze
-#       analyze_directories:
-#         required: false
-#         type: string
-#         default: "lib test"
-#       # In multipackage projects the build directory might be different
-#       working_directory:
-#         required: false
-#         type: string
-#         default: "."
-#       # Pre-run hook, useful to run custom commands before the build (e.g. melos get)
-#       setup:
-#         required: false
-#         type: string
-#         default: ""
-#       # After-run hook, useful to run custom commands after the build
-#       cleanUp:
-#         required: false
-#         type: string
-#         default: ""
-#       # Git clone fetch-depth
-#       fetchDepth:
-#         required: false
-#         type: number
-#         default: 50
-#       # Paths excluded from coverage
-#       coverage_excludes:
-#         required: false
-#         type: string
-#         default: ""
-#       # Minimum coverage required
-#       min_coverage:
-#         required: false
-#         type: number
-#         default: 0
 
 #   # Run workflow if pull request targets main/develop, master or a release branch.
 #   branches:
