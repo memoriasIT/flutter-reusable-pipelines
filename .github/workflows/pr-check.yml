@@ -1,195 +1,214 @@
-name: pull-request-check
-run-name: 🚀 Kicking Off ${github.workflow} on ${github.ref_name}!
-
-# Cancel the active runs of the same branch of the same workflow (run only one
-# at the same time)
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+name: Reusable workflow example
 
 on:
   workflow_call:
     inputs:
-      # Custom scopes for the semanticTitle job
-      scopes:
-        required: false
+      config-path:
+        required: true
         type: string
-      # Directories to analyze with flutter analyze
-      analyze_directories:
-        required: false
-        type: string
-        default: "lib test"
-      # In multipackage projects the build directory might be different
-      working_directory:
-        required: false
-        type: string
-        default: "."
-      # Pre-run hook, useful to run custom commands before the build (e.g. melos get)
-      setup:
-        required: false
-        type: string
-        default: ""
-      # After-run hook, useful to run custom commands after the build
-      cleanUp:
-        required: false
-        type: string
-        default: ""
-      # Git clone fetch-depth
-      fetchDepth:
-        required: false
-        type: number
-        default: 50
-      # Paths excluded from coverage
-      coverage_excludes:
-        required: false
-        type: string
-        default: ""
-      # Minimum coverage required
-      min_coverage:
-        required: false
-        type: number
-        default: 0
-
-  # Run workflow if pull request targets main/develop, master or a release branch.
-  branches:
-    - main
-    - develop
-    - master
-    - "release/**"
-
-  # It will run when the PR is opened, close & reopened, set from draft to ready
-  # to review, the title/body/base is changed or the head branch was updated.
-  pull_request:
-    types: [opened, reopened, ready_for_review, synchronize, edited]
-
-# Only read permission to contents and pull-requests is required, if you decide
-# to expand on this workflow you might need to add more permissions
-permissions:
-  pull-requests: read
-  contents: read
+    secrets:
+      token:
+        required: true
 
 jobs:
- semanticTitle:
-    # By tagging the runner we can use multiple runners according to if we are
-    # building for iOS (that requires Mac OS) or not. In this case, we don't care.
-    # This is a great way to save costs if you are not self-hosting.
-    # runs-on: [linux, macos]
-    # If you are using github images you can just pick one from their images here:
-    # https://github.com/actions/runner-images?tab=readme-ov-file#available-images
-    runs-on: ubuntu-24.04
+  triage:
+    runs-on: ubuntu-latest
     steps:
-        # feat(MIT-33): Add `Button` component
-        # ^    ^    ^
-        # |    |    |__ Subject
-        # |    |_______ Scope
-        # |____________ Type
-      - name: 🤖 Ensure Commit is Semantic
-        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # If PR is only a single commit we also check for the valid pattern
-          validateSingleCommit: true
-          # Scopes can be passed from the project itself. This will allow to
-          # have custom JIRA ticket numbers. For example: "MIT-33"
-          scopes: ${{inputs.scopes}}
-          # If for some reason we want to skip the check in a PR we can add the
-          # label "ignore-semantic-pull-request" to it to skip the check.
-          ignoreLabels: |
-            ignore-semantic-pull-request
+      - name: Run a one-line script
+        run: echo "Hello from the template file ~"
 
-  # I wrote a post for this in more detail, check it out here:
-  # https://memoriasit.com/blog/posts/20241213-osvscanner/
-  vulnerability-checker:
-    name: 🦠️Vulnerability check
-    runs-on: ubuntu-24.04
-    steps:
-        # Sets the SSH key to clone the repo
-      - name: 🔑Setup repo SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_KEY }}
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: ignore
+# name: pull-request-check
+# run-name: 🚀 Kicking Off ${github.workflow} on ${github.ref_name}!
 
-      # Checks out (clones) the code repo
-      - name: 📚Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
+# # Cancel the active runs of the same branch of the same workflow (run only one
+# # at the same time)
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.23.3"
+# on:
+#   workflow_call:
+#     inputs:
+#       # Custom scopes for the semanticTitle job
+#       scopes:
+#         required: false
+#         type: string
+#       # Directories to analyze with flutter analyze
+#       analyze_directories:
+#         required: false
+#         type: string
+#         default: "lib test"
+#       # In multipackage projects the build directory might be different
+#       working_directory:
+#         required: false
+#         type: string
+#         default: "."
+#       # Pre-run hook, useful to run custom commands before the build (e.g. melos get)
+#       setup:
+#         required: false
+#         type: string
+#         default: ""
+#       # After-run hook, useful to run custom commands after the build
+#       cleanUp:
+#         required: false
+#         type: string
+#         default: ""
+#       # Git clone fetch-depth
+#       fetchDepth:
+#         required: false
+#         type: number
+#         default: 50
+#       # Paths excluded from coverage
+#       coverage_excludes:
+#         required: false
+#         type: string
+#         default: ""
+#       # Minimum coverage required
+#       min_coverage:
+#         required: false
+#         type: number
+#         default: 0
 
-      # Use OSV-Scanner to find known vulnerabilities in packages
-      # This is not default in github runners if you use macOS just use brew (see my post for details)
-      - name: 🦠️ Vulnerability Check
-        run: |
-          go install github.com/google/osv-scanner/cmd/osv-scanner@v1
-          osv-scanner -lockfile=./pubspec.lock
+#   # Run workflow if pull request targets main/develop, master or a release branch.
+#   branches:
+#     - main
+#     - develop
+#     - master
+#     - "release/**"
 
-  build:
-    name: 🔨 Build
-    defaults:
-      run:
-        working-directory: ${{inputs.working_directory}}
+#   # It will run when the PR is opened, close & reopened, set from draft to ready
+#   # to review, the title/body/base is changed or the head branch was updated.
+#   pull_request:
+#     types: [opened, reopened, ready_for_review, synchronize, edited]
 
-    runs-on: ubuntu-24.04
+# # Only read permission to contents and pull-requests is required, if you decide
+# # to expand on this workflow you might need to add more permissions
+# permissions:
+#   pull-requests: read
+#   contents: read
 
-    steps:
-      - name: 🔑Setup repo SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_KEY }}
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: ignore
+# jobs:
+#  semanticTitle:
+#     # By tagging the runner we can use multiple runners according to if we are
+#     # building for iOS (that requires Mac OS) or not. In this case, we don't care.
+#     # This is a great way to save costs if you are not self-hosting.
+#     # runs-on: [linux, macos]
+#     # If you are using github images you can just pick one from their images here:
+#     # https://github.com/actions/runner-images?tab=readme-ov-file#available-images
+#     runs-on: ubuntu-24.04
+#     steps:
+#         # feat(MIT-33): Add `Button` component
+#         # ^    ^    ^
+#         # |    |    |__ Subject
+#         # |    |_______ Scope
+#         # |____________ Type
+#       - name: 🤖 Ensure Commit is Semantic
+#         uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         with:
+#           # If PR is only a single commit we also check for the valid pattern
+#           validateSingleCommit: true
+#           # Scopes can be passed from the project itself. This will allow to
+#           # have custom JIRA ticket numbers. For example: "MIT-33"
+#           scopes: ${{inputs.scopes}}
+#           # If for some reason we want to skip the check in a PR we can add the
+#           # label "ignore-semantic-pull-request" to it to skip the check.
+#           ignoreLabels: |
+#             ignore-semantic-pull-request
 
-      - name: 📚 Git Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          # By default only the last commit is fetched, but we will generate a
-          # changelog automatically, so this will be necessary.
-          fetch-depth: ${{inputs.fetchDepth}}
+#   # I wrote a post for this in more detail, check it out here:
+#   # https://memoriasit.com/blog/posts/20241213-osvscanner/
+#   vulnerability-checker:
+#     name: 🦠️Vulnerability check
+#     runs-on: ubuntu-24.04
+#     steps:
+#         # Sets the SSH key to clone the repo
+#       - name: 🔑Setup repo SSH key
+#         uses: shimataro/ssh-key-action@v2
+#         with:
+#           key: ${{ secrets.SSH_KEY }}
+#           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+#           if_key_exists: ignore
 
-      - name: ⬇️Install Flutter version used in the project
-        # I use FVM, which is the flutter equivalent of NPM for JS or RVM for ruby.
-        # It uses a config file in the project to specify the version (.fvmrc).
-        run: fvm install
+#       # Checks out (clones) the code repo
+#       - name: 📚Checkout code
+#         uses: actions/checkout@v3
+#         with:
+#           ref: ${{ github.head_ref }}
+#           fetch-depth: 0
 
-      # - name: 🤫 Set SSH Key
-      #   env:
-      #     ssh_key: ${{secrets.ssh_key}}
-      #   if: env.ssh_key != null
-      #   uses: webfactory/ssh-agent@v0.9.0
-      #   with:
-      #     ssh-private-key: ${{secrets.ssh_key}}
+#       - name: Set up Go
+#         uses: actions/setup-go@v2
+#         with:
+#           go-version: "1.23.3"
 
-      - name: ⬇️Get Flutter dependencies
-        run: fvm flutter pub get
+#       # Use OSV-Scanner to find known vulnerabilities in packages
+#       # This is not default in github runners if you use macOS just use brew (see my post for details)
+#       - name: 🦠️ Vulnerability Check
+#         run: |
+#           go install github.com/google/osv-scanner/cmd/osv-scanner@v1
+#           osv-scanner -lockfile=./pubspec.lock
 
-      - name: ⚠️Analyze for lint errors/warnings
-        run: fvm flutter analyze
+#   build:
+#     name: 🔨 Build
+#     defaults:
+#       run:
+#         working-directory: ${{inputs.working_directory}}
 
-      - name: 🧪Run tests
-        run: fvm flutter test --no-pub --coverage
+#     runs-on: ubuntu-24.04
 
-      - name: 📊 Check Code Coverage
-        uses: VeryGoodOpenSource/very_good_coverage@v3
-        with:
-          path: ${{inputs.working_directory}}/coverage/lcov.info
-          exclude: ${{inputs.coverage_excludes}}
-          min_coverage: ${{inputs.min_coverage}}
+#     steps:
+#       - name: 🔑Setup repo SSH key
+#         uses: shimataro/ssh-key-action@v2
+#         with:
+#           key: ${{ secrets.SSH_KEY }}
+#           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+#           if_key_exists: ignore
 
-      # - name: ⬇Install bundle dependencies in Android
-      #   working-directory: ${{inputs.working_directory}}/android
-      #   run: bundle install
+#       - name: 📚 Git Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           ref: ${{ github.head_ref }}
+#           # By default only the last commit is fetched, but we will generate a
+#           # changelog automatically, so this will be necessary.
+#           fetch-depth: ${{inputs.fetchDepth}}
 
-      - name: ⚙️Build APK
-        working-directory: ${{inputs.working_directory}}/android
-        # In this PR check pipeline we are only worried about if the app builds,
-        # for that reason, I don't worry about flavors or any input
-        run: fvm flutter build apk
+#       - name: ⬇️Install Flutter version used in the project
+#         # I use FVM, which is the flutter equivalent of NPM for JS or RVM for ruby.
+#         # It uses a config file in the project to specify the version (.fvmrc).
+#         run: fvm install
+
+#       # - name: 🤫 Set SSH Key
+#       #   env:
+#       #     ssh_key: ${{secrets.ssh_key}}
+#       #   if: env.ssh_key != null
+#       #   uses: webfactory/ssh-agent@v0.9.0
+#       #   with:
+#       #     ssh-private-key: ${{secrets.ssh_key}}
+
+#       - name: ⬇️Get Flutter dependencies
+#         run: fvm flutter pub get
+
+#       - name: ⚠️Analyze for lint errors/warnings
+#         run: fvm flutter analyze
+
+#       - name: 🧪Run tests
+#         run: fvm flutter test --no-pub --coverage
+
+#       - name: 📊 Check Code Coverage
+#         uses: VeryGoodOpenSource/very_good_coverage@v3
+#         with:
+#           path: ${{inputs.working_directory}}/coverage/lcov.info
+#           exclude: ${{inputs.coverage_excludes}}
+#           min_coverage: ${{inputs.min_coverage}}
+
+#       # - name: ⬇Install bundle dependencies in Android
+#       #   working-directory: ${{inputs.working_directory}}/android
+#       #   run: bundle install
+
+#       - name: ⚙️Build APK
+#         working-directory: ${{inputs.working_directory}}/android
+#         # In this PR check pipeline we are only worried about if the app builds,
+#         # for that reason, I don't worry about flavors or any input
+#         run: fvm flutter build apk
